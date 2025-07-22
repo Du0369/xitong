@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>会议室预约系统</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --danger-color: #ea4335;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333333;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        .header-content {
+          display: flex;
+           flex-direction: column; /* 改为垂直排列 */
+            align-items: center; /* 水平居中 */
+             text-align: center; /* 确保文字居中 */
+         }
+
+      .logo {
+           margin-bottom: 10px; /* 增加间距 */
+           font-size: 3rem;          /* 更大字体（默认约48px） */
+           font-weight: bold;
+           color: #694da9;           /* Google 蓝色，或使用 var(--primary-color) */
+           text-align: center;       /* 确保文字居中 */
+            margin: 0 auto 15px;      /* 上下0，左右自动（居中），底部15px间距 */
+           display: block;           /* 确保 margin: auto 生效 */
+          text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1); /* 可选：轻微阴影增强立体感 */
+        }
+
+        nav {
+       margin-top: 10px; /* 导航栏下移 */
+       }
+        
+        nav a {
+            margin-left: 20px;
+            text-decoration: none;
+            color: var(--dark-gray);
+            font-weight: 500;
+        }
+        
+        nav a:hover {
+            color: var(--primary-color);
+        }
+        
+        .admin-btn {
+            background-color: #66666600;;
+            color: rgb(8, 8, 8);
+            padding: 8px 16px;
+            border-radius: 4px;
+        }
+        
+        .admin-btn:hover {
+            background-color: #fcfdff;
+        }
+        
+        h1 {
+            margin-bottom: 20px;
+            color: var(--dark-gray);
+             font-size: 2rem;
+        }
+        
+        .booking-form {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3367d6;
+        }
+        
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 2fr));
+            gap: 20px;
+        }
+        
+        .room-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+        
+        .room-image {
+            height: 180px;
+            background-color: #eee;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .room-info {
+            padding: 20px;
+        }
+        
+        .room-name {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+        
+        .room-capacity {
+            color: #666;
+            margin-bottom: 15px;
+        }
+        
+        .room-equipment {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .equipment-tag {
+            background-color: var(--light-gray);
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+        }
+        
+        footer {
+               text-align: center;
+                padding: 20px;
+                margin-top: 50px;
+                font-size: 14px;
+                box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+                background-color: #aaa2bd; /* 背景 */
+                color: white; /* 文字 */
+}
+
+        footer .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+             }
+
+        footer p {
+                display: inline-block;
+                margin: 0 15px;
+             }
+        
+        /* 模态框样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .modal-content {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .close-btn {
+            font-size: 24px;
+            cursor: pointer;
+            color: #666;
+        }
+        
+        /* 后台表格样式 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        th {
+            background-color: var(--light-gray);
+            font-weight: 500;
+        }
+        
+        tr:hover {
+            background-color: #f9f9f9;
+        }
+        
+        .action-btn {
+            padding: 6px 12px;
+            margin-right: 5px;
+            font-size: 14px;
+        }
+        
+        .edit-btn {
+            background-color: var(--secondary-color);
+        }
+        
+        .delete-btn {
+            background-color: var(--danger-color);
+        }
+        
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            nav {
+                margin-top: 15px;
+            }
+            
+            nav a {
+                margin: 0 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container header-content">
+            <div class="logo">会议室预约系统</div>
+            <nav>
+                <a href="#home">首页</a>
+                <a href="#booking">预约</a>
+                <a href="#rooms">会议室列表</a>
+                <a href="#admin" class="admin-btn" id="adminBtn">后台管理</a>
+            </nav>
+        </div>
+    </header>
+    
+    <div class="container">
+        <section id="home">
+            <h1>会议室预约</h1>
+            <div class="booking-form">
+                <h2>预约信息</h2>
+                <form id="bookingForm">
+                    <div class="form-group">
+                        <label for="room">选择会议室</label>
+                        <select id="room" required>
+                            <option value="">请选择会议室</option>
+                            <option value="room1">会议室A (20人)</option>
+                            <option value="room2">会议室B (15人)</option>
+                            
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="date">预约日期</label>
+                        <input type="date" id="date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="startTime">开始时间</label>
+                        <input type="time" id="startTime" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="endTime">结束时间</label>
+                        <input type="time" id="endTime" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="name">预约人姓名</label>
+                        <input type="text" id="name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="department">部门</label>
+                        <input type="text" id="department" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="purpose">会议用途</label>
+                        <textarea id="purpose" rows="3"></textarea>
+                    </div>
+                    
+                    <button type="submit">提交预约</button>
+                </form>
+            </div>
+        </section>
+        
+        <section id="rooms">
+            <h2>会议室列表</h2>
+            <div>
+                
+            </div>
+            <div class="room-grid">
+                <div class="room-card">
+                    <div class="room-image" style="background-image: url('https://images.unsplash.com/photo-1571624436279-b272aff752b5?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60');"></div>
+                    <div class="room-info">
+                        <h3 class="room-name">会议室A</h3>
+                        <p class="room-capacity">容量: 20人</p>
+                        <div class="room-equipment">
+                            <span class="equipment-tag">视频会议</span>
+                            <span class="equipment-tag">播放汇报片</span>
+                            <span class="equipment-tag">大屏投屏</span>
+                        </div>
+                        <button onclick="bookRoom('room1')">预约此会议室</button>
+                    </div>
+                </div>
+                
+                <div class="room-card">
+                    <div class="room-image" style="background-image: url('https://images.unsplash.com/photo-1524758631624-e2822e304c36?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60');"></div>
+                    <div class="room-info">
+                        <h3 class="room-name">会议室B</h3>
+                        <p class="room-capacity">容量: 15人</p>
+                        <div class="room-equipment">
+                            <span class="equipment-tag">视频会议</span>
+                            <span class="equipment-tag">电视投屏</span>
+                            <span class="equipment-tag">工作交流</span>
+                        </div>
+                        <button onclick="bookRoom('room2')">预约此会议室</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+    
+    <!-- 预约成功模态框 -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>预约成功</h2>
+                <span class="close-btn" onclick="closeModal('successModal')">&times;</span>
+            </div>
+            <p id="successMessage">您的会议室已成功预约！</p>
+            <button onclick="closeModal('successModal')">确定</button>
+        </div>
+    </div>
+    
+    <!-- 后台管理模态框 -->
+    <div class="modal" id="adminModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>后台管理</h2>
+                <span class="close-btn" onclick="closeModal('adminModal')">&times;</span>
+            </div>
+            
+            <div>
+                <h3>预约记录</h3>
+                <table id="bookingTable">
+                    <thead>
+                        <tr>
+                            <th>会议室</th>
+                            <th>日期</th>
+                            <th>时间</th>
+                            <th>预约人</th>
+                            <th>部门</th>
+                            <th>用途</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- 预约记录将通过JavaScript动态添加 -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+    <div class="container">
+        <p>责任人:XXX</p>
+        <p>联系电话:XXXXX</p>
+    </div>
+    </footer>
+    
+    <script>
+        // 存储预约数据
+        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        
+        // 表单提交处理
+        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const roomSelect = document.getElementById('room');
+            const roomText = roomSelect.options[roomSelect.selectedIndex].text;
+            const roomValue = roomSelect.value;
+            const date = document.getElementById('date').value;
+            const startTime = document.getElementById('startTime').value;
+            const endTime = document.getElementById('endTime').value;
+            const name = document.getElementById('name').value;
+            const department = document.getElementById('department').value;
+            const purpose = document.getElementById('purpose').value;
+            
+            // 检查时间冲突
+            if (checkTimeConflict(roomValue, date, startTime, endTime)) {
+                alert('该时间段已被预约，请选择其他时间');
+                return;
+            }
+            
+            // 创建新预约
+            const newBooking = {
+                id: Date.now(),
+                roomValue: roomValue,
+                room: roomText,
+                date: date,
+                startTime: startTime,
+                endTime: endTime,
+                name: name,
+                department: department,
+                purpose: purpose,
+                createdAt: new Date().toISOString()
+            };
+            
+            // 添加到预约列表
+            bookings.push(newBooking);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+            
+            // 显示成功消息
+            document.getElementById('successMessage').textContent = 
+                `您的会议室 ${roomText} 已成功预约！\n时间: ${date} ${startTime}-${endTime}`;
+            openModal('successModal');
+            
+            // 重置表单
+            this.reset();
+        });
+        
+        // 检查时间冲突
+        function checkTimeConflict(room, date, startTime, endTime) {
+            const start = new Date(`${date}T${startTime}`);
+            const end = new Date(`${date}T${endTime}`);
+            
+            return bookings.some(booking => {
+                if (booking.roomValue !== room || booking.date !== date) return false;
+                
+                const bookingStart = new Date(`${booking.date}T${booking.startTime}`);
+                const bookingEnd = new Date(`${booking.date}T${booking.endTime}`);
+                
+                return (start >= bookingStart && start < bookingEnd) ||
+                       (end > bookingStart && end <= bookingEnd) ||
+                       (start <= bookingStart && end >= bookingEnd);
+            });
+        }
+        
+        // 从会议室列表直接预约
+        function bookRoom(roomId) {
+            document.getElementById('room').value = roomId;
+            document.getElementById('date').focus();
+            window.scrollTo({
+                top: document.getElementById('bookingForm').offsetTop - 20,
+                behavior: 'smooth'
+            });
+        }
+        
+        // 打开模态框
+        function openModal(modalId) {
+            if (modalId === 'adminModal') {
+                renderBookingTable();
+            }
+            document.getElementById(modalId).style.display = 'flex';
+        }
+        
+        // 关闭模态框
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
+        }
+        
+        // 渲染预约表格
+        function renderBookingTable() {
+            const tbody = document.querySelector('#bookingTable tbody');
+            tbody.innerHTML = '';
+            
+            bookings.forEach(booking => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${booking.room}</td>
+                    <td>${booking.date}</td>
+                    <td>${booking.startTime}-${booking.endTime}</td>
+                    <td>${booking.name}</td>
+                    <td>${booking.department}</td>
+                    <td>${booking.purpose || '-'}</td>
+                    <td>
+                        <button class="action-btn edit-btn">编辑</button>
+                        <button class="action-btn delete-btn">删除</button>
+                    </td>
+                `;
+                
+                // 添加删除事件
+                tr.querySelector('.delete-btn').addEventListener('click', () => {
+                    if (confirm('确定要删除此预约吗？')) {
+                        bookings = bookings.filter(b => b.id !== booking.id);
+                        localStorage.setItem('bookings', JSON.stringify(bookings));
+                        renderBookingTable();
+                    }
+                });
+                
+                // 添加编辑事件
+                tr.querySelector('.edit-btn').addEventListener('click', () => {
+                    editBooking(booking);
+                });
+                
+                tbody.appendChild(tr);
+            });
+        }
+        
+        // 编辑预约
+        function editBooking(booking) {
+            document.getElementById('room').value = booking.roomValue;
+            document.getElementById('date').value = booking.date;
+            document.getElementById('startTime').value = booking.startTime;
+            document.getElementById('endTime').value = booking.endTime;
+            document.getElementById('name').value = booking.name;
+            document.getElementById('department').value = booking.department;
+            document.getElementById('purpose').value = booking.purpose;
+            
+            // 从列表中移除当前预约
+            bookings = bookings.filter(b => b.id !== booking.id);
+            localStorage.setItem('bookings', JSON.stringify(bookings));
+            
+            closeModal('adminModal');
+            window.scrollTo({
+                top: document.getElementById('bookingForm').offsetTop - 20,
+                behavior: 'smooth'
+            });
+        }
+        
+        // 设置默认日期为今天
+        document.getElementById('date').valueAsDate = new Date();
+        
+        // 设置默认时间
+        const now = new Date();
+        const nextHour = now.getHours() + 1;
+        document.getElementById('startTime').value = `${nextHour.toString().padStart(2, '0')}:00`;
+        document.getElementById('endTime').value = `${(nextHour + 1).toString().padStart(2, '0')}:00`;
+        
+        // 后台管理按钮事件
+        document.getElementById('adminBtn').addEventListener('click', function(e) {
+            e.preventDefault();
+            openModal('adminModal');
+        });
+        
+        // 关闭模态框当点击背景
+        window.addEventListener('click', function(e) {
+            if (e.target.classList.contains('modal')) {
+                e.target.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
