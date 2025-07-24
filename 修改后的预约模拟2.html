@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>会议室预约系统</title>
+    <!-- 引入 Supabase JS 库 -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --primary-color: #4285f4;
@@ -40,26 +42,26 @@
         }
         
         .header-content {
-          display: flex;
-           flex-direction: column; /* 改为垂直排列 */
-            align-items: center; /* 水平居中 */
-             text-align: center; /* 确保文字居中 */
-         }
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
 
-      .logo {
-           margin-bottom: 10px; /* 增加间距 */
-           font-size: 3rem;          /* 更大字体（默认约48px） */
-           font-weight: bold;
-           color: #694da9;           /* Google 蓝色，或使用 var(--primary-color) */
-           text-align: center;       /* 确保文字居中 */
-            margin: 0 auto 15px;      /* 上下0，左右自动（居中），底部15px间距 */
-           display: block;           /* 确保 margin: auto 生效 */
-          text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1); /* 可选：轻微阴影增强立体感 */
+        .logo {
+            margin-bottom: 10px;
+            font-size: 3rem;
+            font-weight: bold;
+            color: #694da9;
+            text-align: center;
+            margin: 0 auto 15px;
+            display: block;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.1);
         }
 
         nav {
-       margin-top: 10px; /* 导航栏下移 */
-       }
+            margin-top: 10px;
+        }
         
         nav a {
             margin-left: 20px;
@@ -73,10 +75,15 @@
         }
         
         .admin-btn {
-            background-color: #66666600;;
+            background-color: transparent;
             color: rgb(8, 8, 8);
-            padding: 8px 16px;
-            border-radius: 4px;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+        }
+        
+        .admin-btn:active, .admin-btn:focus {
+            background-color: transparent !important;
+            color: rgb(8, 8, 8) !important;
         }
         
         .admin-btn:hover {
@@ -86,7 +93,7 @@
         h1 {
             margin-bottom: 20px;
             color: var(--dark-gray);
-             font-size: 2rem;
+            font-size: 2rem;
         }
         
         .booking-form {
@@ -180,25 +187,25 @@
         }
         
         footer {
-               text-align: center;
-                padding: 20px;
-                margin-top: 50px;
-                font-size: 14px;
-                box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-                background-color: #aaa2bd; /* 背景 */
-                color: white; /* 文字 */
-}
+            text-align: center;
+            padding: 20px;
+            margin-top: 50px;
+            font-size: 14px;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            background-color: #aaa2bd;
+            color: white;
+        }
 
         footer .container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 20px;
-             }
+        }
 
         footer p {
-                display: inline-block;
-                margin: 0 15px;
-             }
+            display: inline-block;
+            margin: 0 15px;
+        }
         
         /* 模态框样式 */
         .modal {
@@ -314,7 +321,6 @@
                             <option value="">请选择会议室</option>
                             <option value="room1">会议室A (20人)</option>
                             <option value="room2">会议室B (15人)</option>
-                            
                         </select>
                     </div>
                     
@@ -355,9 +361,6 @@
         
         <section id="rooms">
             <h2>会议室列表</h2>
-            <div>
-                
-            </div>
             <div class="room-grid">
                 <div class="room-card">
                     <div class="room-image" style="background-image: url('https://images.unsplash.com/photo-1571624436279-b272aff752b5?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60');"></div>
@@ -433,18 +436,29 @@
     </div>
     
     <footer>
-    <div class="container">
-        <p>责任人:XXX</p>
-        <p>联系电话:XXXXX</p>
-    </div>
+        <div class="container">
+            <p>责任人:XXX</p>
+            <p>联系电话:XXXXX</p>
+        </div>
     </footer>
     
     <script>
-        // 存储预约数据
-        let bookings = JSON.parse(localStorage.getItem('bookings')) || [];
+        // 初始化 Supabase
+        const supabaseUrl = 'YOUR_SUPABASE_URL'; // 替换为你的Supabase URL
+        const supabaseKey = 'YOUR_SUPABASE_KEY'; // 替换为你的Supabase匿名/公开密钥
+        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // 设置默认日期为今天
+        document.getElementById('date').valueAsDate = new Date();
+        
+        // 设置默认时间
+        const now = new Date();
+        const nextHour = now.getHours() + 1;
+        document.getElementById('startTime').value = `${nextHour.toString().padStart(2, '0')}:00`;
+        document.getElementById('endTime').value = `${(nextHour + 1).toString().padStart(2, '0')}:00`;
         
         // 表单提交处理
-        document.getElementById('bookingForm').addEventListener('submit', function(e) {
+        document.getElementById('bookingForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const roomSelect = document.getElementById('room');
@@ -458,48 +472,61 @@
             const purpose = document.getElementById('purpose').value;
             
             // 检查时间冲突
-            if (checkTimeConflict(roomValue, date, startTime, endTime)) {
+            if (await checkTimeConflict(roomValue, date, startTime, endTime)) {
                 alert('该时间段已被预约，请选择其他时间');
                 return;
             }
             
-            // 创建新预约
-            const newBooking = {
-                id: Date.now(),
-                roomValue: roomValue,
-                room: roomText,
-                date: date,
-                startTime: startTime,
-                endTime: endTime,
-                name: name,
-                department: department,
-                purpose: purpose,
-                createdAt: new Date().toISOString()
-            };
-            
-            // 添加到预约列表
-            bookings.push(newBooking);
-            localStorage.setItem('bookings', JSON.stringify(bookings));
-            
-            // 显示成功消息
-            document.getElementById('successMessage').textContent = 
-                `您的会议室 ${roomText} 已成功预约！\n时间: ${date} ${startTime}-${endTime}`;
-            openModal('successModal');
-            
-            // 重置表单
-            this.reset();
+            try {
+                // 插入数据到 Supabase
+                const { data, error } = await supabase
+                    .from('bookings')
+                    .insert([{
+                        room_value: roomValue,
+                        room: roomText,
+                        date: date,
+                        start_time: startTime,
+                        end_time: endTime,
+                        name: name,
+                        department: department,
+                        purpose: purpose
+                    }]);
+                
+                if (error) throw error;
+                
+                // 显示成功消息
+                document.getElementById('successMessage').textContent = 
+                    `您的会议室 ${roomText} 已成功预约！\n时间: ${date} ${startTime}-${endTime}`;
+                openModal('successModal');
+                
+                // 重置表单
+                this.reset();
+            } catch (err) {
+                console.error('预约失败:', err);
+                alert('预约失败，请重试');
+            }
         });
         
         // 检查时间冲突
-        function checkTimeConflict(room, date, startTime, endTime) {
+        async function checkTimeConflict(room, date, startTime, endTime) {
             const start = new Date(`${date}T${startTime}`);
             const end = new Date(`${date}T${endTime}`);
             
+            // 从 Supabase 查询该会议室该日期的所有预约
+            const { data: bookings, error } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('room_value', room)
+                .eq('date', date);
+            
+            if (error) {
+                console.error('查询预约失败:', error);
+                return false;
+            }
+            
             return bookings.some(booking => {
-                if (booking.roomValue !== room || booking.date !== date) return false;
-                
-                const bookingStart = new Date(`${booking.date}T${booking.startTime}`);
-                const bookingEnd = new Date(`${booking.date}T${booking.endTime}`);
+                const bookingStart = new Date(`${booking.date}T${booking.start_time}`);
+                const bookingEnd = new Date(`${booking.date}T${booking.end_time}`);
                 
                 return (start >= bookingStart && start < bookingEnd) ||
                        (end > bookingStart && end <= bookingEnd) ||
@@ -531,16 +558,27 @@
         }
         
         // 渲染预约表格
-        function renderBookingTable() {
+        async function renderBookingTable() {
             const tbody = document.querySelector('#bookingTable tbody');
             tbody.innerHTML = '';
+            
+            // 从 Supabase 获取所有预约
+            const { data: bookings, error } = await supabase
+                .from('bookings')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            if (error) {
+                console.error('获取预约失败:', error);
+                return;
+            }
             
             bookings.forEach(booking => {
                 const tr = document.createElement('tr');
                 tr.innerHTML = `
                     <td>${booking.room}</td>
                     <td>${booking.date}</td>
-                    <td>${booking.startTime}-${booking.endTime}</td>
+                    <td>${booking.start_time}-${booking.end_time}</td>
                     <td>${booking.name}</td>
                     <td>${booking.department}</td>
                     <td>${booking.purpose || '-'}</td>
@@ -551,11 +589,19 @@
                 `;
                 
                 // 添加删除事件
-                tr.querySelector('.delete-btn').addEventListener('click', () => {
+                tr.querySelector('.delete-btn').addEventListener('click', async () => {
                     if (confirm('确定要删除此预约吗？')) {
-                        bookings = bookings.filter(b => b.id !== booking.id);
-                        localStorage.setItem('bookings', JSON.stringify(bookings));
-                        renderBookingTable();
+                        const { error } = await supabase
+                            .from('bookings')
+                            .delete()
+                            .eq('id', booking.id);
+                        
+                        if (!error) {
+                            renderBookingTable();
+                        } else {
+                            console.error('删除失败:', error);
+                            alert('删除失败');
+                        }
                     }
                 });
                 
@@ -569,18 +615,26 @@
         }
         
         // 编辑预约
-        function editBooking(booking) {
-            document.getElementById('room').value = booking.roomValue;
+        async function editBooking(booking) {
+            document.getElementById('room').value = booking.room_value;
             document.getElementById('date').value = booking.date;
-            document.getElementById('startTime').value = booking.startTime;
-            document.getElementById('endTime').value = booking.endTime;
+            document.getElementById('startTime').value = booking.start_time;
+            document.getElementById('endTime').value = booking.end_time;
             document.getElementById('name').value = booking.name;
             document.getElementById('department').value = booking.department;
-            document.getElementById('purpose').value = booking.purpose;
+            document.getElementById('purpose').value = booking.purpose || '';
             
-            // 从列表中移除当前预约
-            bookings = bookings.filter(b => b.id !== booking.id);
-            localStorage.setItem('bookings', JSON.stringify(bookings));
+            // 从 Supabase 删除当前预约
+            const { error } = await supabase
+                .from('bookings')
+                .delete()
+                .eq('id', booking.id);
+            
+            if (error) {
+                console.error('删除预约失败:', error);
+                alert('编辑失败，请重试');
+                return;
+            }
             
             closeModal('adminModal');
             window.scrollTo({
@@ -588,15 +642,6 @@
                 behavior: 'smooth'
             });
         }
-        
-        // 设置默认日期为今天
-        document.getElementById('date').valueAsDate = new Date();
-        
-        // 设置默认时间
-        const now = new Date();
-        const nextHour = now.getHours() + 1;
-        document.getElementById('startTime').value = `${nextHour.toString().padStart(2, '0')}:00`;
-        document.getElementById('endTime').value = `${(nextHour + 1).toString().padStart(2, '0')}:00`;
         
         // 后台管理按钮事件
         document.getElementById('adminBtn').addEventListener('click', function(e) {
